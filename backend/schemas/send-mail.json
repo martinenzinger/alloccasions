@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "group",
+    "type": "object",
+    "properties": {
+      "mailId": {
+        "type": "string"
+      },
+      "userName": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "mailId",
+      "userName"
+    ],
+    "additionalProperties": false
+}

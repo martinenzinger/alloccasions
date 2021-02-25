@@ -1,0 +1,218 @@
+service:
+  name: serverless-greeting-card-app
+
+plugins:
+  - serverless-webpack
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
+  - serverless-plugin-canary-deployments
+  - serverless-iam-roles-per-function
+  # - serverless-dynamodb-local
+  # - serverless-offline
+
+provider:
+  name: aws
+
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-west-1'}
+
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  environment:
+    MAIL_ITEMS_TABLE: Mail-Items-${self:provider.stage}
+    ATTACHMENTS_S3_BUCKET: greetingcards-attachmentsbucket-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
+    INDEX_NAME: LocalMailItems
+    JWKS_URL: https://dev-slu2rjje.eu.auth0.com/.well-known/jwks.json
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - codedeploy:*
+      Resource:
+        - '*'
+
+custom:
+  serverless-offline:
+    port: 3003
+
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Greeting Card API
+        description: Serverless app for sending greeting cards
+    models:
+      - name: CreateMailRequest
+        contentType: application/json
+        schema: ${file(schemas/create-mail.json)}
+      - name: SendMailRequest
+        contentType: application/json
+        schema: ${file(schemas/send-mail.json)}
+
+functions:
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+    runtime: nodejs12.x
+
+  GetMailItems:
+    handler: src/lambda/http/getMailItems.handler
+    events:
+      - http:
+          method: get
+          path: sentmails
+          authorizer: Auth
+          cors: true
+          documentation:
+            summary: Get mail items
+            description: Get mail items
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MAIL_ITEMS_TABLE}
+
+  CreateMailItem:
+    handler: src/lambda/http/createMailItem.handler
+    runtime: nodejs12.x
+    events:
+      - http:
+          method: post
+          path: create
+          authorizer: Auth
+          cors: true
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create Mail Item
+            description: Save mail information to DB
+            requestModels:
+              'application/json': CreateMailRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MAIL_ITEMS_TABLE}
+
+  DeleteMailItem:
+    handler: src/lambda/http/deleteMailItem.handler
+    events:
+      - http:
+          method: delete
+          path: sentmails/{mailId}
+          authorizer: Auth
+          cors: true
+          documentation:
+            summary: Delete a mail item
+            description: Delete a mail item
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MAIL_ITEMS_TABLE}
+
+  SendMail:
+    handler: src/lambda/http/sendMail.handler
+    runtime: nodejs12.x
+    events:
+      - http:
+          method: post
+          path: send
+          authorizer: Auth
+          cors: true
+          documentation:
+            summary: Send Mail
+            description: Attach the greeting card and send mail
+            requestModels:
+              'application/json': SendMailRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MAIL_ITEMS_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENTS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - ses:SendRawEmail
+        Resource: arn:aws:ses:${self:provider.region}:*:identity/*
+
+resources:
+  Resources:
+    # TODO: Add any necessary AWS resources
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+    GatewayResponseDefault5XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+          
+    MailItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: mailId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: mailId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.MAIL_ITEMS_TABLE}
+
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.ATTACHMENTS_S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000

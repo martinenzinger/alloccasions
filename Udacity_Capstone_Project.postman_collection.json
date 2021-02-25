@@ -1,0 +1,218 @@
+{
+	"info": {
+		"_postman_id": "b1ce4620-f260-4416-8b8f-af373b08d77d",
+		"name": "Udacity Capstone Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "MailItems",
+			"item": [
+				{
+					"name": "Get all mail items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.us-west-1.amazonaws.com/dev/sentmails",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"us-west-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"sentmails"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create mail item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"subject\": \"Test Subject Postman\",\n    \"sender\": \"ecard@alloccasions.us\",\n    \"recipient\": \"sls-app-test@protonmail.com\",\n    \"card\": \"card02\"\n}"
+						},
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.us-west-1.amazonaws.com/dev/create",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"us-west-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete mail item",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.us-west-1.amazonaws.com/dev/sentmails/9713909d-637f-4941-a291-f18205f52ea7",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"us-west-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"sentmails",
+								"9713909d-637f-4941-a291-f18205f52ea7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send mail",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mailId\": \"bb49e824-d69b-4c4d-9fe6-3296032e74d6\",\n    \"userName\": \"Your Name\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.us-west-1.amazonaws.com/dev/send",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"us-west-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"send"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "4c7dcf00-4ff7-45ef-a401-7f5dff4a3d81",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "5ab0affe-4809-4a65-baea-b1b057fed143",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "35711df2-fdf1-4e22-b438-370032d994e3",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "2d68e550-9fd4-48b2-9b20-347d8995ec6d",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "dbf4097a-6b66-4a21-a986-4f787c80ec03",
+			"key": "apiId",
+			"value": "i3ksa8jura"
+		},
+		{
+			"id": "c6d1c2e4-9c0d-4eba-bfd0-ea73a780f3d6",
+			"key": "authToken",
+			"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IklLeDBzRWVyRUJjWkhhMmNORHVQZyJ9.eyJpc3MiOiJodHRwczovL2Rldi1zbHUycmpqZS5ldS5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NWZmZjhhODY5OGI2ODkwMDc1MWMyYjgwIiwiYXVkIjoidkl1RzRCZlZmOEFadG5jQVlKblZBNmw5OVpuaUdqSUUiLCJpYXQiOjE2MTQyOTM5NzYsImV4cCI6MTYxNDMyOTk3NiwiYXRfaGFzaCI6Ik5wUDJCNlhlZTNxT0w5c0RIend5c0EiLCJub25jZSI6Ii5uc0V1YzBUVFlQSU5STkQxNzI5TFEzX1ZnR0drNEw4In0.OZZFLFJZhReY1HVNTVGKPj11qOSIrn5Pv_zkBZepnZSLfFEWv67KFL-yMqRYCqSlCn4RqyLld8DdThbl_Mpwl1wH84J46y8D7ZX6jfZnmUI6ULjpiBt1qwoPRQNvEbG-rEOCmKU-hvzo1MPErEFPfKp0DmsH0zXoi8myw6mFa9V-pewEKtS9pE-0zkLkUrLe2OIJB8XQbWpEguoH4uaGqCj7VtuWBDODPbL38H_w-PJSUiVpjX2aJ9jhILWCwVrZEIA4jrGIafrdOgOZl5m1UQFAWNQVUulCdipMlOG4dUOZSU8V_HyXXlIIy0Suqi1rhqT3TWFaTS0nYgEuWkrK8A"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

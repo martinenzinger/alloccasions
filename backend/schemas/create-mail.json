@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "group",
+    "type": "object",
+    "properties": {
+      "subject": {
+        "type": "string"
+      },
+      "sender": {
+        "type": "string"
+      },
+      "recipient": {
+        "type": "string"
+      },
+      "card": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "subject",
+      "sender",
+      "recipient",
+      "card"
+    ],
+    "additionalProperties": false
+}
