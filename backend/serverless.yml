@@ -54,6 +54,9 @@ custom:
       - name: CreateMailRequest
         contentType: application/json
         schema: ${file(schemas/create-mail.json)}
+      - name: UploadCardRequest
+        contentType: application/json
+        schema: ${file(schemas/upload-card.json)}
       - name: SendMailRequest
         contentType: application/json
         schema: ${file(schemas/send-mail.json)}
@@ -119,6 +122,25 @@ functions:
           - dynamodb:GetItem
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MAIL_ITEMS_TABLE}
+
+  GetUploadUrl:
+    handler: src/lambda/http/getUploadUrl.handler
+    runtime: nodejs12.x
+    events:
+      - http:
+          method: get
+          path: uploadurl
+          authorizer: Auth
+          cors: true
+          documentation:
+            summary: Get pre-signed uplod URL
+            description: Get pre-signed upload URL
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENTS_S3_BUCKET}/*
 
   SendMail:
     handler: src/lambda/http/sendMail.handler

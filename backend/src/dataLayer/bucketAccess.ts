@@ -13,13 +13,23 @@ export class BucketAccess {
     private readonly expiration = process.env.SIGNED_URL_EXPIRATION) {
   }
 
-  async generateSignedUrl(fileKey: string): Promise<string> {
+  async getObjectSignedUrl(fileKey: string): Promise<string> {
     const result = this.s3Client.getSignedUrl('getObject', {
       Bucket: this.bucketName,
       Key: fileKey,
       Expires: this.expiration
     });
-    logger.info("S3 - Generate upload URL: " + result);
+    logger.info("S3 - Get download URL: " + result);
+    return result;
+  }
+
+  async putObjectSignedUrl(fileKey: string): Promise<string> {
+    const result = this.s3Client.getSignedUrl('putObject', {
+      Bucket: this.bucketName,
+      Key: fileKey,
+      Expires: this.expiration
+    });
+    logger.info("S3 - Get upload URL: " + result);
     return result;
   }
 

@@ -8,7 +8,6 @@ import { MailItem } from '../types/MailItem';
 
 export async function getMailItemsForUser(idToken: string): Promise<MailItem[]> {
   console.log('Fetching mail items')
-
   const response = await Axios.get(`${apiEndpoint}/sentmails`, {
     headers: {
       'Content-Type': 'application/json',
@@ -42,6 +41,26 @@ export async function deleteMailItem(
       'Authorization': `Bearer ${idToken}`
     }
   })
+}
+
+export async function uploadCard(
+  idToken: string,
+  pdfFile: File
+): Promise<string> {
+  const urlResponse = await Axios.get(`${apiEndpoint}/uploadurl`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+  })
+  console.log('Pre-signed Url:', urlResponse.data)
+
+  const response = await Axios.put(urlResponse.data.url, pdfFile, {
+    headers: {
+      'Content-Type': pdfFile.type
+    }
+  })
+  return urlResponse.data.key;
 }
 
 export async function sendMail(

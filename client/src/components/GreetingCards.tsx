@@ -1,10 +1,12 @@
 import { History } from 'history'
 import * as React from 'react'
+import { jsPDF } from 'jspdf'
 
-import { createMailItem, sendMail } from '../api/greeting-card-api'
+import { createMailItem, sendMail, uploadCard } from '../api/greeting-card-api'
+import { CardEditor } from './CardEditor'
 import Auth from '../auth/Auth'
 
-const snackbar = require('snackbar');
+const snackbar = require('snackbar')
 
 interface GreetingCardProps {
   auth: Auth
@@ -32,6 +34,14 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
     })
   }
 
+  handleSelectCustom = () => {
+    this.setState({
+      selectedCard: "custom"
+    })
+
+
+  }
+
   handleSubjectChange = (evt: any) => {
     this.setState({
       subject: evt.target.value
@@ -48,6 +58,35 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
     const buttonElement = evt.target as HTMLInputElement;
     buttonElement.classList.add('sending');
     buttonElement.value = "✉️";
+
+    let cardFile = this.state.selectedCard;
+
+    if (this.state.selectedCard === "custom") {
+      try {
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "px",
+          format: [900, 640]
+        });
+        const c = document.getElementById("card-editor") as HTMLCanvasElement;
+        var dataUrl = c.toDataURL("image/jpeg", 1.0);
+        doc.addImage(dataUrl, 'JPEG', 0, 0, 900, 640);
+        var pdfBlob = doc.output('blob');
+        let pdfFile: any = pdfBlob;
+        pdfFile.lastModifiedDate = new Date();
+        pdfFile.name = "custom_card.pdf";
+        const fileKey = await uploadCard(this.props.auth.getIdToken(), pdfFile);
+        console.log("key for uploaded file", fileKey);
+        cardFile = fileKey;
+      } catch (err) {
+        buttonElement.classList.remove('sending');
+        buttonElement.value = "Send Card";
+        console.error(err);
+        snackbar.show("ERROR: An error occured while uploading your custom card.");
+        return;
+      } 
+    }
+
     try {
       if (!this.state.subject || !this.state.recipient || !this.state.selectedCard) throw Error("missing information.");
       const userProfile: any = await this.props.auth.getUserProfile();
@@ -56,7 +95,7 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
         subject: this.state.subject,
         sender: "ecard@alloccasions.us",
         recipient: this.state.recipient,
-        card: this.state.selectedCard
+        card: cardFile
       })
       console.log("create mail item response ", response);
       const mailSent = await sendMail(this.props.auth.getIdToken(), {
@@ -83,6 +122,8 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
 
         {this.renderGreetingCards()}
 
+        {this.state.selectedCard === "custom" ? this.renderCustomCardEditor() : ""}
+
         {this.renderSendCardInput()}
       </div>
     )
@@ -94,6 +135,14 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
         <div><label>Subject</label><input type="text" className="" onChange={this.handleSubjectChange}/></div>
         <div><label>Recipient</label><input type="email" className="" onChange={this.handleRecipientChange}/></div>
         <div><input type="submit" value="Send Card" onClick={(evt) => this.onSendMail(evt)}/></div>
+      </div>
+    )
+  }
+
+  renderCustomCardEditor() {
+    return (
+      <div className="custom-card-editor">
+        <CardEditor auth={this.props.auth}></CardEditor>
       </div>
     )
   }
@@ -117,6 +166,18 @@ export class GreetingCards extends React.PureComponent<GreetingCardProps, Greeti
             </div>
           )
         })}
+        <div key="custom" className="card-container__image-element">
+          <label htmlFor="custom-card" className="">
+            <input type="radio"
+              className=""
+              name="image-select-radios"
+              id="custom-card"
+              onClick={() => this.handleSelectCustom()}/>
+            <div className="card-container__image-wrapper">
+              <img src={'img/custom.png'}/>
+            </div>
+          </label>
+        </div>
       </div>
     )
   }

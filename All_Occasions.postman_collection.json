@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "b1ce4620-f260-4416-8b8f-af373b08d77d",
-		"name": "Udacity Capstone Project",
+		"name": "Capstone Project",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -178,6 +178,63 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Upload",
+			"item": [
+				{
+					"name": "Get pre-signed URL",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.us-west-1.amazonaws.com/dev/sentmails",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"us-west-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"sentmails"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "4a1771d2-3d15-4341-863b-25cf44f35dac",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "c3b0830a-916d-4162-b677-96d628658ae8",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"event": [
@@ -204,12 +261,12 @@
 	],
 	"variable": [
 		{
-			"id": "dbf4097a-6b66-4a21-a986-4f787c80ec03",
+			"id": "161989e1-711c-40c3-aeba-346a193e5962",
 			"key": "apiId",
 			"value": "i3ksa8jura"
 		},
 		{
-			"id": "c6d1c2e4-9c0d-4eba-bfd0-ea73a780f3d6",
+			"id": "530fc8e6-e055-434d-ab59-9df57944e647",
 			"key": "authToken",
 			"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IklLeDBzRWVyRUJjWkhhMmNORHVQZyJ9.eyJpc3MiOiJodHRwczovL2Rldi1zbHUycmpqZS5ldS5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NWZmZjhhODY5OGI2ODkwMDc1MWMyYjgwIiwiYXVkIjoidkl1RzRCZlZmOEFadG5jQVlKblZBNmw5OVpuaUdqSUUiLCJpYXQiOjE2MTQyOTM5NzYsImV4cCI6MTYxNDMyOTk3NiwiYXRfaGFzaCI6Ik5wUDJCNlhlZTNxT0w5c0RIend5c0EiLCJub25jZSI6Ii5uc0V1YzBUVFlQSU5STkQxNzI5TFEzX1ZnR0drNEw4In0.OZZFLFJZhReY1HVNTVGKPj11qOSIrn5Pv_zkBZepnZSLfFEWv67KFL-yMqRYCqSlCn4RqyLld8DdThbl_Mpwl1wH84J46y8D7ZX6jfZnmUI6ULjpiBt1qwoPRQNvEbG-rEOCmKU-hvzo1MPErEFPfKp0DmsH0zXoi8myw6mFa9V-pewEKtS9pE-0zkLkUrLe2OIJB8XQbWpEguoH4uaGqCj7VtuWBDODPbL38H_w-PJSUiVpjX2aJ9jhILWCwVrZEIA4jrGIafrdOgOZl5m1UQFAWNQVUulCdipMlOG4dUOZSU8V_HyXXlIIy0Suqi1rhqT3TWFaTS0nYgEuWkrK8A"
 		}
