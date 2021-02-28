@@ -1,4 +1,4 @@
-![AllOccasions](images/logo.svg?raw=true "AllOccasions" =220x)
+![AllOccasions](images/logo.svg?raw=true "AllOccasions")
 
 serverless ecard example
 
