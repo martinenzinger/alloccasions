@@ -16,6 +16,7 @@ interface CardEditorState {
   x: number;
   y: number;
   currentlyHeldItem: CanvasElement|null;
+  edit: boolean;
 }
 
 let img: HTMLImageElement = new Image();
@@ -26,17 +27,19 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
         let copyItems = this.state.items;
         let selectedItem = copyItems.pop() as CanvasElement;
         selectedItem.text = evt.target.value;
+        let nodes = this.getNodesForItem(selectedItem);
+        selectedItem.nodes = nodes;
         copyItems.push(selectedItem);
         this.setState({
           items: copyItems
         });
       }
 
-    isPointBelowLine (mouseX: number, mouseY: number, xprime: number, yprime: number, centerX: number, centerY: number) {
-        var dx = xprime - centerX;
-        var dy = yprime - centerY;
-        var mx = mouseX - centerX;
-        var my = mouseY - centerY;
+    isPointBelowLine (mouseX: number, mouseY: number, prime: [number, number], center: [number, number]) {
+        var dx = prime[0] - center[0];
+        var dy = prime[1] - center[1];
+        var mx = mouseX - center[0];
+        var my = mouseY - center[1];
         var cross = dx * my - dy * mx;  //zero means point on line
         var below = (cross > 0);        //mouse is "at the right hand" of the directed line   
         if (dx != 0) {          // check for vertical line
@@ -48,31 +51,37 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
         }
     }
 
-    getBoundsForItem (item: CanvasElement) {
-        var textHeight = item.size;
+    getNodesForItem (item: CanvasElement) {
+        var textHeight = item.size * 0.9;
         var text = document.createElement("div");
         text.style.fontFamily = "Dancing Script"; 
         text.style.height = 'auto'; 
         text.style.width = 'auto'; 
         text.style.position = 'absolute'; 
         text.style.whiteSpace = 'no-wrap'; 
-        text.style.padding = '0 25px';
+        text.style.padding = '0';
         text.innerHTML = item.text; 
         text.style.fontSize = item.size + "px";
         text.style.left = "-50vw";
         document.body.appendChild(text);
-    
-        var dx = Math.cos(item.rotate) * text.clientWidth;
-        var dy = Math.sin(item.rotate) * text.clientWidth;
-    
+
+        var dw_x = text.clientWidth * Math.cos(item.rotate);
+        var dw_y = text.clientWidth * Math.sin(item.rotate);
+
+        var dh_x = text.clientHeight * Math.cos(item.rotate - Math.PI/2);
+        var dh_y = text.clientHeight * Math.sin(item.rotate - Math.PI/2);
+
+        var x_0 = item.x - textHeight * Math.sin(item.rotate);
+        var y_0 = item.y - textHeight * Math.cos(item.rotate);
+
         document.body.removeChild(text);
-    
+
         return {
-            "top": [item.x, (item.y - textHeight), (item.x + dx), (item.y + dy - textHeight)],
-            "bottom": [item.x, item.y, (item.x + dx), (item.y + dy)],
-            "left": item.x,
-            "right": (item.x + dx)
-        };
+            "ul": [x_0 , y_0] as [number, number],
+            "ur": [(x_0 + dw_x), (y_0 - dw_y)] as [number, number],
+            "ll": [(x_0 + dh_x), (y_0 - dh_y)] as [number, number],
+            "lr": [(x_0 + dw_x + dh_x), (y_0 - dw_y - dh_y)] as [number, number]
+         };
     }
 
     async selectImageFromDisk() {
@@ -99,10 +108,34 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
     }
 
     isInBounds (x: number, y: number, item: CanvasElement) {
-        var bounds = this.getBoundsForItem(item);
-        return this.isPointBelowLine(x, y, bounds.top[0], bounds.top[1], bounds.top[2], bounds.top[3]) &&
-            !this.isPointBelowLine(x, y, bounds.bottom[0], bounds.bottom[1], bounds.bottom[2], bounds.bottom[3]) &&
-            x > bounds.left && x < bounds.right;
+
+        const nodes = item.nodes;
+
+        item.rotate = Math.abs(item.rotate) % (2 * Math.PI);
+
+        window.console.log("rotation " + (item.rotate / Math.PI) + " pi");
+
+        if (item.rotate == 0) {
+            return y > nodes.ul[1] && y < nodes.ll[1] && x > nodes.ul[0] && x < nodes.ur[0];
+        } else if (item.rotate > 0 && item.rotate < Math.PI/2) {
+            return !this.isPointBelowLine(x, y, nodes.ur, nodes.ul) && !this.isPointBelowLine(x, y, nodes.ur, nodes.lr)
+                && this.isPointBelowLine(x, y, nodes.ul, nodes.ll) && this.isPointBelowLine(x, y, nodes.lr, nodes.ll);
+        } else if (item.rotate === Math.PI/2) {
+            return y < nodes.ul[1] && y > nodes.ur[1] && x > nodes.ul[0] && x < nodes.ll[0];
+        } else if (item.rotate > Math.PI/2 && item.rotate < Math.PI) {
+            return !this.isPointBelowLine(x, y, nodes.lr, nodes.ur) && !this.isPointBelowLine(x, y, nodes.lr, nodes.ll)
+                && this.isPointBelowLine(x, y, nodes.ur, nodes.ul) && this.isPointBelowLine(x, y, nodes.ll, nodes.ul);
+        } else if (item.rotate === Math.PI) {
+            return y > nodes.ll[1] && y < nodes.ul[1] && x > nodes.ur[0] && x < nodes.ul[0];
+        } else if (item.rotate > Math.PI && item.rotate < Math.PI * 3/2) {
+            return !this.isPointBelowLine(x, y, nodes.ll, nodes.ul) && !this.isPointBelowLine(x, y, nodes.ll, nodes.lr)
+                && this.isPointBelowLine(x, y, nodes.lr, nodes.ur) && this.isPointBelowLine(x, y, nodes.ul, nodes.ur);
+        } else if (item.rotate === Math.PI * 3/2) {
+            return y < nodes.ur[1] && y > nodes.ul[1] && x > nodes.ll[0] && x < nodes.ul[0];
+        } else if (item.rotate > Math.PI * 3/2 && item.rotate < Math.PI * 2) {
+            return !this.isPointBelowLine(x, y, nodes.ul, nodes.ll) && !this.isPointBelowLine(x, y, nodes.ul, nodes.ur)
+                && this.isPointBelowLine(x, y, nodes.ll, nodes.lr) && this.isPointBelowLine(x, y, nodes.ur, nodes.lr);
+        }
     }
 
     putItemOnTop (item: CanvasElement) {
@@ -120,10 +153,21 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
             this.state.ctx.fillStyle = element.color;
             this.state.ctx.font = element.size + "px 'Dancing Script'";
             this.state.ctx.translate(element.x,element.y);
-            this.state.ctx.rotate(element.rotate);
-            this.state.ctx.fillText(element.text, 0, 0);
             this.state.ctx.rotate(-element.rotate);
+            this.state.ctx.fillText(element.text, 0, 0);
+            this.state.ctx.rotate(element.rotate);
             this.state.ctx.translate(-element.x,-element.y);
+            this.state.ctx.setLineDash([5, 3]);/*dashes are 5px and spaces are 3px*/
+            if (this.state.edit) {
+                this.state.ctx.beginPath();
+                this.state.ctx.moveTo(element.nodes.ul[0], element.nodes.ul[1]);
+                this.state.ctx.lineTo(element.nodes.ur[0], element.nodes.ur[1]);
+                this.state.ctx.lineTo(element.nodes.lr[0], element.nodes.lr[1]);
+                this.state.ctx.lineTo(element.nodes.ll[0], element.nodes.ll[1]);
+                this.state.ctx.lineTo(element.nodes.ul[0], element.nodes.ul[1]);
+                this.state.ctx.strokeStyle = "white";
+                this.state.ctx.stroke();
+            }
         })
     }
 
@@ -141,21 +185,31 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
             img.crossOrigin = 'anonymous';
             img.src = 'https://source.unsplash.com/featured/900x680';
             
-            let textElement: CanvasElement = {
-                    x: 160,
-                    y: 500,
+            let textElement = {
+                    x: 360,
+                    y: 250,
                     color: "#efefef",
                     size: 80,
                     text: "Custom eCard",
-                    rotate: (-4 * Math.PI / 180)
+                    rotate: (8 * Math.PI / 180),
+                    nodes: {
+                        ul: [0,0] as [number,number],
+                        ur: [0,0] as [number,number],
+                        ll: [0,0] as [number,number],
+                        lr: [0,0] as [number,number]
+                    }
                 };
+
+            let nodes = this.getNodesForItem(textElement);
+            textElement.nodes = nodes;
 
             this.setState({
                 items: [textElement],
                 clicked : false,
                 x : 0,
                 y : 0,
-                currentlyHeldItem : null
+                currentlyHeldItem : null,
+                edit: true
             });
             
             // const button1 = document.querySelector("#o1 button") as HTMLButtonElement;
@@ -207,6 +261,7 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
             finput.addEventListener('change', this.selectImageFromDisk);
 
             c.addEventListener('mousedown', ({offsetX, offsetY}) => {
+                window.console.log("mousedown", {offsetX, offsetY});
                 this.setState({
                     clicked: true
                 });
@@ -220,6 +275,13 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
             })
             
             c.addEventListener('mouseup', _ => {
+                if (this.state.clicked && this.state.currentlyHeldItem) {
+                    let copy = this.state.currentlyHeldItem;
+                    copy.nodes = this.getNodesForItem(copy);
+                    this.setState({
+                        currentlyHeldItem: copy
+                    });
+                }
                 this.setState({
                     clicked: false,
                     currentlyHeldItem: null
@@ -232,7 +294,8 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
                 if (evt.shiftKey) {
                     if (this.state.clicked && this.state.currentlyHeldItem) {
                         let copy = this.state.currentlyHeldItem;
-                        copy.rotate = (offsetX - 450) / 450 * Math.PI;
+                        copy.rotate = ((offsetY - 450 - (copy.y - 450)) / 250 * Math.PI) % (2 * Math.PI);
+                        copy.nodes = this.getNodesForItem(copy);
                         this.setState({
                             currentlyHeldItem: copy
                         });
@@ -242,7 +305,8 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
                     if (this.state.clicked && this.state.currentlyHeldItem) {
                         copy.x += offsetX - this.state.x
                         copy.y += offsetY - this.state.y
-
+                        const nodes = this.getNodesForItem(copy);
+                        copy.nodes = nodes;
                     }
                     this.setState({
                         x: offsetX,
@@ -253,6 +317,8 @@ export class CardEditor extends React.PureComponent<CardEditorProps, CardEditorS
             })
 
             const interval = setInterval(_ => this.renderCanvas(), 1000 / 60)
+
+            setInterval(() => { console.log("items", this.state.items); }, 5000)
 
             this.setState({
                 c: c,

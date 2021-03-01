@@ -1,3 +1,5 @@
+import { Nodes } from "./Nodes";
+
 export interface CanvasElement {
     x: number
     y: number
@@ -5,5 +7,6 @@ export interface CanvasElement {
     size: number
     text: string
     rotate: number
+    nodes: Nodes
   }
   
